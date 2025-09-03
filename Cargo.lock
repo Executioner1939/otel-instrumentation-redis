@@ -410,7 +410,7 @@ checksum = "83d059a296a47436748557a353c5e6c5705b9470ef6c95cfc52c21a8814ddac2"
 
 [[package]]
 name = "otel-instrumentation-redis"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "opentelemetry",
  "opentelemetry-semantic-conventions",

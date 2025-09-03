@@ -57,7 +57,7 @@
 //! let instrumented = InstrumentedClient::new(client);
 //!
 //! // Get async connection
-//! let mut conn = instrumented.get_async_connection().await?;
+//! let mut conn = instrumented.get_multiplexed_async_connection().await?;
 //!
 //! // Use convenience methods
 //! conn.set("async_key", "async_value").await?;
