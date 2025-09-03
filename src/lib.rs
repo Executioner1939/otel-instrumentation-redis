@@ -161,14 +161,13 @@ mod tests {
         assert!(attributes.len() >= 2);
 
         // Check that we have db.system - use the actual constant
-        assert!(attributes
-            .iter()
-            .any(|attr| attr.key.as_str() == opentelemetry_semantic_conventions::attribute::DB_SYSTEM_NAME));
+        assert!(attributes.iter().any(|attr| attr.key.as_str()
+            == opentelemetry_semantic_conventions::attribute::DB_SYSTEM_NAME));
 
         // Check that we have db.operation with GET - use the actual constant
-        let operation_attr = attributes
-            .iter()
-            .find(|attr| attr.key.as_str() == opentelemetry_semantic_conventions::attribute::DB_OPERATION_NAME);
+        let operation_attr = attributes.iter().find(|attr| {
+            attr.key.as_str() == opentelemetry_semantic_conventions::attribute::DB_OPERATION_NAME
+        });
         assert!(operation_attr.is_some());
         if let Some(attr) = operation_attr {
             if let opentelemetry::Value::String(op) = &attr.value {
@@ -184,9 +183,9 @@ mod tests {
 
         let attributes = extract_command_attributes(&cmd);
 
-        let operation_attr = attributes
-            .iter()
-            .find(|attr| attr.key.as_str() == opentelemetry_semantic_conventions::attribute::DB_OPERATION_NAME);
+        let operation_attr = attributes.iter().find(|attr| {
+            attr.key.as_str() == opentelemetry_semantic_conventions::attribute::DB_OPERATION_NAME
+        });
         assert!(operation_attr.is_some());
         if let Some(attr) = operation_attr {
             if let opentelemetry::Value::String(op) = &attr.value {
@@ -202,9 +201,9 @@ mod tests {
 
         let attributes = extract_command_attributes(&cmd);
 
-        let operation_attr = attributes
-            .iter()
-            .find(|attr| attr.key.as_str() == opentelemetry_semantic_conventions::attribute::DB_OPERATION_NAME);
+        let operation_attr = attributes.iter().find(|attr| {
+            attr.key.as_str() == opentelemetry_semantic_conventions::attribute::DB_OPERATION_NAME
+        });
         assert!(operation_attr.is_some());
         if let Some(attr) = operation_attr {
             if let opentelemetry::Value::String(op) = &attr.value {
@@ -223,9 +222,9 @@ mod tests {
 
         let attributes = extract_command_attributes(&cmd);
 
-        let operation_attr = attributes
-            .iter()
-            .find(|attr| attr.key.as_str() == opentelemetry_semantic_conventions::attribute::DB_OPERATION_NAME);
+        let operation_attr = attributes.iter().find(|attr| {
+            attr.key.as_str() == opentelemetry_semantic_conventions::attribute::DB_OPERATION_NAME
+        });
         assert!(operation_attr.is_some());
         if let Some(attr) = operation_attr {
             if let opentelemetry::Value::String(op) = &attr.value {
@@ -241,9 +240,9 @@ mod tests {
 
         let attributes = extract_command_attributes(&cmd);
 
-        let operation_attr = attributes
-            .iter()
-            .find(|attr| attr.key.as_str() == opentelemetry_semantic_conventions::attribute::DB_OPERATION_NAME);
+        let operation_attr = attributes.iter().find(|attr| {
+            attr.key.as_str() == opentelemetry_semantic_conventions::attribute::DB_OPERATION_NAME
+        });
         assert!(operation_attr.is_some());
         if let Some(attr) = operation_attr {
             if let opentelemetry::Value::String(op) = &attr.value {
@@ -269,12 +268,10 @@ mod tests {
 
         // Verify attributes are returned
         assert!(!attributes.is_empty());
-        assert!(attributes
-            .iter()
-            .any(|attr| attr.key.as_str() == opentelemetry_semantic_conventions::attribute::DB_SYSTEM_NAME));
-        assert!(attributes
-            .iter()
-            .any(|attr| attr.key.as_str() == opentelemetry_semantic_conventions::attribute::DB_OPERATION_NAME));
+        assert!(attributes.iter().any(|attr| attr.key.as_str()
+            == opentelemetry_semantic_conventions::attribute::DB_SYSTEM_NAME));
+        assert!(attributes.iter().any(|attr| attr.key.as_str()
+            == opentelemetry_semantic_conventions::attribute::DB_OPERATION_NAME));
     }
 
     #[test]
@@ -284,12 +281,10 @@ mod tests {
         let attributes = extract_command_attributes(&cmd);
 
         // Should still have db.system, but no db.operation
-        assert!(attributes
-            .iter()
-            .any(|attr| attr.key.as_str() == opentelemetry_semantic_conventions::attribute::DB_SYSTEM_NAME));
-        assert!(!attributes
-            .iter()
-            .any(|attr| attr.key.as_str() == opentelemetry_semantic_conventions::attribute::DB_OPERATION_NAME));
+        assert!(attributes.iter().any(|attr| attr.key.as_str()
+            == opentelemetry_semantic_conventions::attribute::DB_SYSTEM_NAME));
+        assert!(!attributes.iter().any(|attr| attr.key.as_str()
+            == opentelemetry_semantic_conventions::attribute::DB_OPERATION_NAME));
     }
 
     #[test]

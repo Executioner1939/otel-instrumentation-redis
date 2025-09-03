@@ -121,14 +121,14 @@ impl InstrumentedConnection {
     /// ```ignore
     /// use redis::Cmd;
     /// use otel_instrumentation_redis::sync::InstrumentedConnection;
-    /// 
+    ///
     /// let client = redis::Client::open("redis://127.0.0.1/").unwrap();
     /// let conn = client.get_connection().unwrap();
     /// let mut instrumented = InstrumentedConnection::new(conn);
-    /// 
+    ///
     /// let mut cmd = Cmd::new();
     /// cmd.arg("GET").arg("key");
-    /// 
+    ///
     /// match instrumented.req_command(&cmd) {
     ///     Ok(value) => println!("Command succeeded: {:?}", value),
     ///     Err(err) => eprintln!("Command failed: {:?}", err),
