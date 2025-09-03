@@ -1,0 +1,25 @@
+[package]
+name = "otel-instrumentation-redis"
+version = "0.1.0"
+edition = "2021"
+description = "OpenTelemetry instrumentation for redis-rs"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/hermes-capital-io/hermes-platform"
+keywords = ["observability", "tracing", "redis", "opentelemetry", "instrumentation"]
+categories = ["development-tools::debugging"]
+
+[dependencies]
+redis = "0.32.5"
+tracing = "0.1.41"
+opentelemetry = "0.30"
+opentelemetry-semantic-conventions = "0.30.0"
+tokio = { version = "1.0", optional = true }
+
+[features]
+default = ["sync"]
+sync = []
+aio = ["dep:tokio", "redis/aio", "redis/tokio-comp"]
+
+[dev-dependencies]
+tokio = { version = "1.0", features = ["macros", "rt-multi-thread"] }
+tracing-test = "0.2"

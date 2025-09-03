@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="AIAssistantCustomInstructionsStorage">
+    <option name="instructions">
+      <map>
+        <entry key="AIAssistant.WriteDocumentation.JavaScript">
+          <value>
+            <AIAssistantStoredInstruction>
+              <option name="actionId" value="AIAssistant.WriteDocumentation.JavaScript" />
+              <option name="content" value="Generate comprehensive rustdoc documentation for Rust this exact format and style guidelines:&#10;&#10;## Documentation Structure&#10;&#10;Write rustdoc comments using `///` that include these sections in order:&#10;&#10;1. **Opening Summary** - One-line description of what the function does, ending with a period.&#10;&#10;2. **`# Parameters`** section - List each parameter with:&#10;   - Parameter name in backticks&#10;   - Type information after a colon&#10;   - Clear description of purpose and constraints&#10;   - Use bullet points (`-`) for each parameter&#10;&#10;3. **`# Behavior`** section - Detailed explanation of:&#10;   - What the function does step-by-step&#10;   - Side effects or state changes&#10;   - Any important internal logic or algorithms&#10;   - Error conditions and how they're handled&#10;   - Use sub-bullets for detailed breakdowns when categorizing behavior&#10;&#10;4. **`# Usage`** section - Explain:&#10;   - When and why to use this function&#10;   - Integration with larger systems or patterns&#10;   - Performance considerations&#10;   - Best practices or common patterns&#10;&#10;5. **`# Example`** section - Provide practical code example:&#10;   - **ALWAYS use `rust,ignore` for code blocks**&#10;   - Include necessary imports&#10;   - Show realistic usage scenario&#10;   - Add brief explanation after the code if helpful&#10;&#10;## Formatting Requirements&#10;&#10;### Text Formatting&#10;- Use backticks for all code elements: parameter names, types, field names, values&#10;- Use quotes for string literals and semantic categories&#10;- Bold (`**`) sparingly for emphasis on critical points&#10;- Maintain consistent indentation for readability&#10;&#10;### Lists and Bullets&#10;- Use `-` for main bullet points&#10;- Indent sub-bullets with proper spacing&#10;- For categorizations, list each case as a sub-bullet with the format:&#10;  - `VariantName`: Recorded/Described as `&quot;string_value&quot;`.&#10;&#10;### Code Blocks&#10;- **CRITICAL**: Always use ` ```rust,ignore` for examples&#10;- Never use plain ` ```rust` blocks&#10;- Include all necessary imports in examples&#10;- Make examples self-contained and runnable (if not for the `ignore` flag)&#10;&#10;## Content Guidelines&#10;&#10;### Be Specific About:&#10;- Exact field names and their types&#10;- String values and formats used&#10;- Error classifications and categories&#10;- Integration points with external systems (e.g., OpenTelemetry, tracing)&#10;&#10;### Maintain Technical Precision:&#10;- Use correct Rust terminology (e.g., &quot;reference&quot; not &quot;pointer&quot;, &quot;trait&quot; not &quot;interface&quot;)&#10;- Specify ownership semantics where relevant&#10;- Mention lifetime requirements if applicable&#10;- Note any unsafe operations or invariants&#10;&#10;### Example Template:&#10;&#10;```rust&#10;/// Performs a specific operation with detailed observability and error handling.&#10;///&#10;/// # Parameters&#10;///&#10;/// - `param1`: A reference to `Type1` that provides the primary input.&#10;/// - `param2`: An owned `Type2` representing configuration options.&#10;/// - `param3`: A mutable reference to `Type3` for output collection.&#10;///&#10;/// # Behavior&#10;///&#10;/// This function executes the following operations:&#10;///&#10;/// - **Validation**: Checks that `param1` meets the required constraints.&#10;/// - **Processing**: Transforms the input according to the specified algorithm.&#10;/// - **Recording**: Logs the operation details to the observability system.&#10;///&#10;/// The function categorizes results based on the outcome:&#10;///&#10;/// - `Success`: Recorded as `&quot;operation_successful&quot;`.&#10;/// - `PartialSuccess`: Recorded as `&quot;operation_partial&quot;`.&#10;/// - `Failure`: Recorded as `&quot;operation_failed&quot;`.&#10;///&#10;/// Error conditions are handled as follows:&#10;///&#10;/// - `InvalidInput`: Returns early with appropriate error.&#10;/// - `ProcessingError`: Attempts recovery before failing.&#10;/// - `SystemError`: Logs and propagates the error.&#10;///&#10;/// # Usage&#10;///&#10;/// This function is designed for high-throughput scenarios where observability&#10;/// is critical. It integrates with the application's tracing infrastructure to&#10;/// provide detailed metrics and debugging information. Best used within a&#10;/// traced context to maximize observability benefits.&#10;///&#10;/// # Example&#10;///&#10;/// ```rust,ignore&#10;/// use crate::{Type1, Type2, Type3};&#10;/// use tracing::info_span;&#10;///&#10;/// let span = info_span!(&quot;operation&quot;);&#10;/// let _guard = span.enter();&#10;///&#10;/// let input = Type1::new(&quot;data&quot;);&#10;/// let config = Type2::default();&#10;/// let mut output = Type3::new();&#10;///&#10;/// perform_operation(&amp;input, config, &amp;mut output)?;&#10;/// assert_eq!(output.len(), 1);&#10;/// ```&#10;///&#10;/// In this example, the operation processes the input within a traced span,&#10;/// collecting results in the output buffer.&#10;pub fn perform_operation(&#10;    param1: &amp;Type1,&#10;    param2: Type2,&#10;    param3: &amp;mut Type3,&#10;) -&gt; Result&lt;(), Error&gt; {&#10;    // Implementation&#10;}&#10;```&#10;&#10;## Special Cases&#10;&#10;### For Error Recording Functions:&#10;- List all error variants with their string representations&#10;- Specify OpenTelemetry status codes and fields&#10;- Document integration with distributed tracing&#10;&#10;### For Async Functions:&#10;- Note async runtime requirements&#10;- Document cancellation behavior&#10;- Specify any timeout or deadline handling&#10;&#10;### For Generic Functions:&#10;- Document trait bounds clearly&#10;- Provide examples with concrete types&#10;- Explain any type inference requirements&#10;&#10;### For Unsafe Functions:&#10;- Include `# Safety` section before `# Example`&#10;- Document all invariants that must be upheld&#10;- Explain consequences of violating safety requirements&#10;&#10;## Quality Checklist&#10;&#10;Before finalizing documentation, ensure:&#10;- [ ] All parameters are documented with types&#10;- [ ] Behavior section covers all code paths&#10;- [ ] Error conditions are explicitly listed&#10;- [ ] Examples use `rust,ignore` annotation&#10;- [ ] Field names and string values are in backticks/quotes&#10;- [ ] Categories and classifications are complete&#10;- [ ] Integration points are clearly explained&#10;- [ ] Examples include all necessary imports&#10;- [ ] Technical terms are used correctly&#10;- [ ] The one-line summary is clear and complete&#10;&#10;## Output Example Request&#10;&#10;When asking for documentation, you can say:&#10;&quot;Generate rustdoc for this function following the detailed format with rust,ignore examples, including Parameters, Behavior, Usage, and Example sections. List all error categorizations and ensure all code elements are in backticks.&quot;" />
+            </AIAssistantStoredInstruction>
+          </value>
+        </entry>
+      </map>
+    </option>
+  </component>
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="ALL" />
+  </component>
+  <component name="CargoProjects">
+    <cargoProject FILE="$PROJECT_DIR$/Cargo.toml">
+      <package file="$PROJECT_DIR$">
+        <feature name="default" enabled="true" />
+        <feature name="sync" enabled="true" />
+      </package>
+    </cargoProject>
+  </component>
+  <component name="ChangeListManager">
+    <list default="true" id="b10d7e2f-bfc4-4e3f-ad70-da51b429e585" name="Changes" comment="" />
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="ExecutionTargetManager" SELECTED_TARGET="RsBuildProfile:dev" />
+  <component name="MacroExpansionManager">
+    <option name="directoryName" value="t8KwMpyq" />
+  </component>
+  <component name="ProjectColorInfo">{
+  &quot;associatedIndex&quot;: 4
+}</component>
+  <component name="ProjectId" id="32BQfwft0BSvLpgCkWf04AQD0sF" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showExcludedFiles" value="false" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;ModuleVcsDetector.initialDetectionPerformed&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.rust.reset.selective.auto.import&quot;: &quot;true&quot;,
+    &quot;junie.onboarding.icon.badge.shown&quot;: &quot;true&quot;,
+    &quot;last_opened_file_path&quot;: &quot;/Users/rpeters/Documents/Work/Hermes/Crates/otel-instrumentation-redis&quot;,
+    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
+    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
+    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
+    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
+    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
+    &quot;org.rust.cargo.project.model.PROJECT_DISCOVERY&quot;: &quot;true&quot;,
+    &quot;org.rust.cargo.project.model.impl.CargoExternalSystemProjectAware.subscribe.first.balloon&quot;: &quot;&quot;,
+    &quot;org.rust.first.attach.projects&quot;: &quot;true&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;ml.llm.AIAssistantPromptsLibrary&quot;,
+    &quot;to.speed.mode.migration.done&quot;: &quot;true&quot;,
+    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
+  }
+}</component>
+  <component name="RunManager">
+    <configuration name="Test otel-instrumentation-redis" type="CargoCommandRunConfiguration" factoryName="Cargo Command">
+      <option name="buildProfileId" value="dev" />
+      <option name="command" value="test --workspace" />
+      <option name="workingDirectory" value="file://$PROJECT_DIR$" />
+      <envs />
+      <option name="emulateTerminal" value="true" />
+      <option name="channel" value="DEFAULT" />
+      <option name="requiredFeatures" value="true" />
+      <option name="allFeatures" value="false" />
+      <option name="withSudo" value="false" />
+      <option name="buildTarget" value="REMOTE" />
+      <option name="backtrace" value="SHORT" />
+      <option name="isRedirectInput" value="false" />
+      <option name="redirectInputPath" value="" />
+      <method v="2">
+        <option name="CARGO.BUILD_TASK_PROVIDER" enabled="true" />
+      </method>
+    </configuration>
+  </component>
+  <component name="RustProjectSettings">
+    <option name="toolchainHomeDirectory" value="$USER_HOME$/.cargo/bin" />
+  </component>
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="b10d7e2f-bfc4-4e3f-ad70-da51b429e585" name="Changes" comment="" />
+      <created>1756891592911</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1756891592911</updated>
+      <workItem from="1756891594010" duration="3090000" />
+    </task>
+    <servers />
+  </component>
+  <component name="TypeScriptGeneratedFilesManager">
+    <option name="version" value="3" />
+  </component>
+  <component name="XDebuggerManager">
+    <breakpoint-manager>
+      <breakpoints>
+        <line-breakpoint enabled="true" type="com.jetbrains.cidr.execution.debugger.OCBreakpointType">
+          <url>file://$PROJECT_DIR$/src/common/mod.rs</url>
+          <line>57</line>
+          <option name="timeStamp" value="1" />
+        </line-breakpoint>
+      </breakpoints>
+    </breakpoint-manager>
+  </component>
+  <component name="XSLT-Support.FileAssociations.UIState">
+    <expand />
+    <select />
+  </component>
+</project>

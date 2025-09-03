@@ -1,0 +1,7 @@
+/Users/rpeters/Documents/Work/Hermes/Crates/otel-instrumentation-redis/target/debug/deps/opentelemetry_semantic_conventions-19b3b844bb7bebc3.d: /Users/rpeters/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/opentelemetry-semantic-conventions-0.13.0/src/lib.rs /Users/rpeters/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/opentelemetry-semantic-conventions-0.13.0/src/resource.rs /Users/rpeters/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/opentelemetry-semantic-conventions-0.13.0/src/trace.rs
+
+/Users/rpeters/Documents/Work/Hermes/Crates/otel-instrumentation-redis/target/debug/deps/libopentelemetry_semantic_conventions-19b3b844bb7bebc3.rmeta: /Users/rpeters/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/opentelemetry-semantic-conventions-0.13.0/src/lib.rs /Users/rpeters/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/opentelemetry-semantic-conventions-0.13.0/src/resource.rs /Users/rpeters/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/opentelemetry-semantic-conventions-0.13.0/src/trace.rs
+
+/Users/rpeters/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/opentelemetry-semantic-conventions-0.13.0/src/lib.rs:
+/Users/rpeters/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/opentelemetry-semantic-conventions-0.13.0/src/resource.rs:
+/Users/rpeters/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/opentelemetry-semantic-conventions-0.13.0/src/trace.rs:
