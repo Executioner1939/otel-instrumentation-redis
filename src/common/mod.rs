@@ -12,15 +12,15 @@ use opentelemetry_semantic_conventions as semconv;
 /// # Arguments
 ///
 /// * `cmd` - A reference to a `redis::Cmd` object that represents the Redis command
-///           to extract attributes from.
+///   to extract attributes from.
 ///
 /// # Returns
 ///
 /// A `Vec<KeyValue>` containing the extracted attributes:
 /// * `DB_SYSTEM_NAME` ("redis") - The database system being used (in this case, Redis).
 /// * `DB_OPERATION_NAME` - The name of the command (e.g., "GET", "SET"), if it can
-///                         be extracted from the provided `cmd`. If the command name
-///                         cannot be determined, this attribute is omitted.
+///   be extracted from the provided `cmd`. If the command name
+///   cannot be determined, this attribute is omitted.
 ///
 /// # Example
 ///
@@ -142,7 +142,7 @@ fn get_command_name(cmd: &redis::Cmd) -> Option<String> {
 /// # Arguments
 ///
 /// * `operation` - A string slice that holds the Redis operation name. 
-///                 For example, "GET", "SET", etc.
+///   For example, "GET", "SET", etc.
 ///
 /// # Returns
 ///

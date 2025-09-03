@@ -132,11 +132,4 @@ impl InstrumentedClient {
         Ok(crate::aio::InstrumentedMultiplexedConnection::new(conn))
     }
 
-    /// Get an asynchronous connection to the Redis server
-    #[cfg(feature = "aio")]
-    #[instrument(skip(self))]
-    pub async fn get_async_connection(&self) -> Result<crate::aio::InstrumentedAsyncConnection, RedisError> {
-        let conn = self.inner.get_async_connection().await?;
-        Ok(crate::aio::InstrumentedAsyncConnection::new(conn))
-    }
 }

@@ -305,12 +305,10 @@ mod tests {
         let client = redis::Client::open("redis://127.0.0.1/").unwrap();
         let instrumented_client = InstrumentedClient::new(client);
         
-        // Just test that we can call the methods (they will fail without Redis server)
-        let result1 = instrumented_client.get_async_connection().await;
-        let result2 = instrumented_client.get_multiplexed_async_connection().await;
+        // Just test that we can call the method (it will fail without Redis server)
+        let result = instrumented_client.get_multiplexed_async_connection().await;
         
-        // We expect these to fail without a Redis server, but the methods should exist
-        assert!(result1.is_err());
-        assert!(result2.is_err());
+        // We expect this to fail without a Redis server, but the method should exist
+        assert!(result.is_err());
     }
 }

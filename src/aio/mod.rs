@@ -1,30 +1,30 @@
 //! Asynchronous Redis connection instrumentation
 
-use redis::aio::{Connection as AsyncConnection, MultiplexedConnection};
+use redis::aio::{ConnectionLike, MultiplexedConnection};
 use redis::{Cmd, RedisResult, Value};
 use tracing::instrument;
 use crate::common::{create_command_span, apply_span_attributes, record_command_result};
 
-/// An instrumented wrapper around `redis::aio::Connection`
-pub struct InstrumentedAsyncConnection {
-    inner: AsyncConnection,
+/// An instrumented wrapper around an async Redis connection
+pub struct InstrumentedAsyncConnection<C> {
+    inner: C,
 }
 
-impl InstrumentedAsyncConnection {
+impl<C: ConnectionLike> InstrumentedAsyncConnection<C> {
     /// Create a new instrumented async connection
-    pub fn new(connection: AsyncConnection) -> Self {
+    pub fn new(connection: C) -> Self {
         Self {
             inner: connection,
         }
     }
 
     /// Get the underlying connection
-    pub fn inner(&self) -> &AsyncConnection {
+    pub fn inner(&self) -> &C {
         &self.inner
     }
 
     /// Get a mutable reference to the underlying connection
-    pub fn inner_mut(&mut self) -> &mut AsyncConnection {
+    pub fn inner_mut(&mut self) -> &mut C {
         &mut self.inner
     }
 
