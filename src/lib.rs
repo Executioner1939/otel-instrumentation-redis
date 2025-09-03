@@ -62,7 +62,7 @@
 //! // Use convenience methods
 //! conn.set("async_key", "async_value").await?;
 //! let value: String = conn.get("async_key").await?;
-//! 
+//!
 //! // Hash operations
 //! conn.hset("user:1", "name", "Alice").await?;
 //! let name: String = conn.hget("user:1", "name").await?;
@@ -88,7 +88,7 @@
 //! // let resource = Resource::new(vec![
 //! //     (SERVICE_NAME, "my-cache-service".into()),
 //! // ]);
-//! 
+//!
 //! // Use this resource when initializing your tracer provider
 //! ```
 //!
@@ -129,10 +129,10 @@ pub use client::InstrumentedClient;
 /// Re-export commonly used types
 pub mod prelude {
     pub use crate::client::InstrumentedClient;
-    
+
     #[cfg(feature = "sync")]
     pub use crate::sync::*;
-    
+
     #[cfg(feature = "aio")]
     pub use crate::aio::*;
 }
@@ -140,25 +140,35 @@ pub mod prelude {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::common::{
+        create_command_span, extract_command_attributes, generate_span_name, record_error_on_span,
+    };
     use redis::Cmd;
-    use crate::common::{extract_command_attributes, generate_span_name, create_command_span, record_error_on_span};
 
     #[test]
     fn test_extract_command_attributes_get() {
         let mut cmd = Cmd::new();
         cmd.arg("GET").arg("test_key");
-        
+
         let attributes = extract_command_attributes(&cmd);
-        
+
+        // Debug: Print actual attribute keys
+        for attr in &attributes {
+            eprintln!("Attribute key: {}", attr.key.as_str());
+        }
+
         // Should have at least db.system and db.operation
         assert!(attributes.len() >= 2);
-        
-        // Check that we have db.system
-        assert!(attributes.iter().any(|attr| attr.key.as_str() == "db.system"));
-        
-        
-        // Check that we have db.operation with GET
-        let operation_attr = attributes.iter().find(|attr| attr.key.as_str() == "db.operation");
+
+        // Check that we have db.system - use the actual constant
+        assert!(attributes
+            .iter()
+            .any(|attr| attr.key.as_str() == opentelemetry_semantic_conventions::attribute::DB_SYSTEM_NAME));
+
+        // Check that we have db.operation with GET - use the actual constant
+        let operation_attr = attributes
+            .iter()
+            .find(|attr| attr.key.as_str() == opentelemetry_semantic_conventions::attribute::DB_OPERATION_NAME);
         assert!(operation_attr.is_some());
         if let Some(attr) = operation_attr {
             if let opentelemetry::Value::String(op) = &attr.value {
@@ -171,10 +181,12 @@ mod tests {
     fn test_extract_command_attributes_set() {
         let mut cmd = Cmd::new();
         cmd.arg("SET").arg("test_key").arg("test_value");
-        
+
         let attributes = extract_command_attributes(&cmd);
-        
-        let operation_attr = attributes.iter().find(|attr| attr.key.as_str() == "db.operation");
+
+        let operation_attr = attributes
+            .iter()
+            .find(|attr| attr.key.as_str() == opentelemetry_semantic_conventions::attribute::DB_OPERATION_NAME);
         assert!(operation_attr.is_some());
         if let Some(attr) = operation_attr {
             if let opentelemetry::Value::String(op) = &attr.value {
@@ -187,10 +199,12 @@ mod tests {
     fn test_extract_command_attributes_hget() {
         let mut cmd = Cmd::new();
         cmd.arg("HGET").arg("test_hash").arg("field");
-        
+
         let attributes = extract_command_attributes(&cmd);
-        
-        let operation_attr = attributes.iter().find(|attr| attr.key.as_str() == "db.operation");
+
+        let operation_attr = attributes
+            .iter()
+            .find(|attr| attr.key.as_str() == opentelemetry_semantic_conventions::attribute::DB_OPERATION_NAME);
         assert!(operation_attr.is_some());
         if let Some(attr) = operation_attr {
             if let opentelemetry::Value::String(op) = &attr.value {
@@ -202,11 +216,16 @@ mod tests {
     #[test]
     fn test_extract_command_attributes_sadd() {
         let mut cmd = Cmd::new();
-        cmd.arg("SADD").arg("test_set").arg("member1").arg("member2");
-        
+        cmd.arg("SADD")
+            .arg("test_set")
+            .arg("member1")
+            .arg("member2");
+
         let attributes = extract_command_attributes(&cmd);
-        
-        let operation_attr = attributes.iter().find(|attr| attr.key.as_str() == "db.operation");
+
+        let operation_attr = attributes
+            .iter()
+            .find(|attr| attr.key.as_str() == opentelemetry_semantic_conventions::attribute::DB_OPERATION_NAME);
         assert!(operation_attr.is_some());
         if let Some(attr) = operation_attr {
             if let opentelemetry::Value::String(op) = &attr.value {
@@ -218,15 +237,17 @@ mod tests {
     #[test]
     fn test_extract_command_attributes_lowercase_input() {
         let mut cmd = Cmd::new();
-        cmd.arg("get").arg("test_key");  // lowercase command
-        
+        cmd.arg("get").arg("test_key"); // lowercase command
+
         let attributes = extract_command_attributes(&cmd);
-        
-        let operation_attr = attributes.iter().find(|attr| attr.key.as_str() == "db.operation");
+
+        let operation_attr = attributes
+            .iter()
+            .find(|attr| attr.key.as_str() == opentelemetry_semantic_conventions::attribute::DB_OPERATION_NAME);
         assert!(operation_attr.is_some());
         if let Some(attr) = operation_attr {
             if let opentelemetry::Value::String(op) = &attr.value {
-                assert_eq!(op.as_str(), "GET");  // Should be uppercase
+                assert_eq!(op.as_str(), "GET"); // Should be uppercase
             }
         }
     }
@@ -243,37 +264,45 @@ mod tests {
     fn test_create_command_span() {
         let mut cmd = Cmd::new();
         cmd.arg("GET").arg("test_key");
-        
+
         let (_span, attributes) = create_command_span(&cmd);
-        
+
         // Verify attributes are returned
         assert!(!attributes.is_empty());
-        assert!(attributes.iter().any(|attr| attr.key.as_str() == "db.system"));
-        assert!(attributes.iter().any(|attr| attr.key.as_str() == "db.operation"));
+        assert!(attributes
+            .iter()
+            .any(|attr| attr.key.as_str() == opentelemetry_semantic_conventions::attribute::DB_SYSTEM_NAME));
+        assert!(attributes
+            .iter()
+            .any(|attr| attr.key.as_str() == opentelemetry_semantic_conventions::attribute::DB_OPERATION_NAME));
     }
 
     #[test]
     fn test_empty_command() {
         let cmd = Cmd::new();
-        
+
         let attributes = extract_command_attributes(&cmd);
-        
+
         // Should still have db.system, but no db.operation
-        assert!(attributes.iter().any(|attr| attr.key.as_str() == "db.system"));
-        assert!(!attributes.iter().any(|attr| attr.key.as_str() == "db.operation"));
+        assert!(attributes
+            .iter()
+            .any(|attr| attr.key.as_str() == opentelemetry_semantic_conventions::attribute::DB_SYSTEM_NAME));
+        assert!(!attributes
+            .iter()
+            .any(|attr| attr.key.as_str() == opentelemetry_semantic_conventions::attribute::DB_OPERATION_NAME));
     }
 
     #[test]
     fn test_error_recording() {
         // Test that we can create error recording functionality
         let span = tracing::info_span!("test_span");
-        
+
         // Create a mock Redis error
         let error = redis::RedisError::from((redis::ErrorKind::ResponseError, "Test error"));
-        
+
         // This should not panic and should record error attributes
         record_error_on_span(&span, &error);
-        
+
         // The test passes if no panic occurs
     }
 
@@ -290,7 +319,7 @@ mod tests {
         // Actual Redis connection testing would require a running Redis instance
         let client = redis::Client::open("redis://127.0.0.1/").unwrap();
         let instrumented_client = InstrumentedClient::new(client);
-        
+
         // Just test that we can call the method (it will fail without Redis server)
         let result = instrumented_client.get_connection();
         // We expect this to fail without a Redis server, but the method should exist
@@ -304,10 +333,10 @@ mod tests {
         // Actual Redis connection testing would require a running Redis instance
         let client = redis::Client::open("redis://127.0.0.1/").unwrap();
         let instrumented_client = InstrumentedClient::new(client);
-        
+
         // Just test that we can call the method (it will fail without Redis server)
         let result = instrumented_client.get_multiplexed_async_connection().await;
-        
+
         // We expect this to fail without a Redis server, but the method should exist
         assert!(result.is_err());
     }

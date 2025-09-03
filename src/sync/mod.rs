@@ -1,10 +1,10 @@
-//! This module provides an instrumented wrapper around the `redis::Connection` to 
-//! enable enhanced tracing and monitoring capabilities for Redis operations. 
+//! This module provides an instrumented wrapper around the `redis::Connection` to
+//! enable enhanced tracing and monitoring capabilities for Redis operations.
 //! The `InstrumentedConnection` enables capturing command spans and attributes,
 
-use redis::{Connection, Cmd, RedisResult, Value, ConnectionLike};
+use crate::common::{apply_span_attributes, create_command_span, record_command_result};
+use redis::{Cmd, Connection, ConnectionLike, RedisResult, Value};
 use tracing::{instrument, Span};
-use crate::common::{create_command_span, apply_span_attributes, record_command_result};
 
 /// A struct that represents a connection with added instrumentation capabilities.
 ///
@@ -15,12 +15,13 @@ use crate::common::{create_command_span, apply_span_attributes, record_command_r
 /// - `inner`: The underlying `Connection` object that this struct wraps and extends.
 ///
 /// # Examples
-/// ```
-/// use your_crate::InstrumentedConnection;
-/// use your_crate::Connection;
+/// ```ignore
+/// use otel_instrumentation_redis::sync::InstrumentedConnection;
+/// use redis::Connection;
 ///
-/// let connection = Connection::new(); // Assume `Connection` has a `new` method
-/// let instrumented_connection = InstrumentedConnection { inner: connection };
+/// let client = redis::Client::open("redis://127.0.0.1/").unwrap();
+/// let connection = client.get_connection().unwrap();
+/// let instrumented_connection = InstrumentedConnection::new(connection);
 ///
 /// // Use `instrumented_connection` as needed
 /// ```
@@ -47,9 +48,7 @@ impl InstrumentedConnection {
     /// let instance = StructName::new(connection);
     /// ```
     pub fn new(connection: Connection) -> Self {
-        Self {
-            inner: connection,
-        }
+        Self { inner: connection }
     }
 
     /// Returns a reference to the inner `Connection` object.
@@ -69,7 +68,7 @@ impl InstrumentedConnection {
 
     /// Provides mutable access to the inner `Connection` object.
     ///
-    /// This method allows modification of the underlying `Connection` instance 
+    /// This method allows modification of the underlying `Connection` instance
     /// by returning a mutable reference to it.
     ///
     /// # Examples
@@ -86,7 +85,7 @@ impl InstrumentedConnection {
     ///
     /// # Note
     ///
-    /// Use this method with caution, as modifying the inner state could 
+    /// Use this method with caution, as modifying the inner state could
     /// potentially impact other parts of the code relying on the `Connection` state.
     pub fn inner_mut(&mut self) -> &mut Connection {
         &mut self.inner
@@ -119,10 +118,18 @@ impl InstrumentedConnection {
     /// - If tracing is enabled, this function captures detailed execution data for diagnostics.
     ///
     /// # Examples
-    /// ```rust
-    /// let mut client = RedisClient::new();
-    /// let cmd = Cmd::new();
-    /// match client.req_command(&cmd) {
+    /// ```ignore
+    /// use redis::Cmd;
+    /// use otel_instrumentation_redis::sync::InstrumentedConnection;
+    /// 
+    /// let client = redis::Client::open("redis://127.0.0.1/").unwrap();
+    /// let conn = client.get_connection().unwrap();
+    /// let mut instrumented = InstrumentedConnection::new(conn);
+    /// 
+    /// let mut cmd = Cmd::new();
+    /// cmd.arg("GET").arg("key");
+    /// 
+    /// match instrumented.req_command(&cmd) {
     ///     Ok(value) => println!("Command succeeded: {:?}", value),
     ///     Err(err) => eprintln!("Command failed: {:?}", err),
     /// }
@@ -133,7 +140,7 @@ impl InstrumentedConnection {
     pub fn req_command(&mut self, cmd: &Cmd) -> RedisResult<Value> {
         let (span, attributes) = create_command_span(cmd);
         let _enter = span.enter();
-        
+
         // Apply additional attributes
         apply_span_attributes(&span, &attributes);
 
@@ -176,9 +183,9 @@ impl InstrumentedConnection {
     ///
     /// ## Example
     /// ```rust,ignore
-    /// use your_crate::YourRedisConnectionType; // Replace with the actual module and type
+    /// use otel_instrumentation_redis::Connection; // Replace with the actual module and type
     ///
-    /// let mut redis_connection = YourRedisConnectionType::new();
+    /// let mut redis_connection = Connection::new();
     /// let command = b"*2\r\n$4\r\nPING\r\n";
     ///
     /// let result = redis_connection.req_packed_command(command);
@@ -196,7 +203,7 @@ impl InstrumentedConnection {
     )]
     pub fn req_packed_command(&mut self, cmd: &[u8]) -> RedisResult<Value> {
         let span = Span::current();
-        
+
         // Execute the command
         let result = self.inner.req_packed_command(cmd);
 
@@ -271,7 +278,7 @@ impl InstrumentedConnection {
         count: usize,
     ) -> RedisResult<Vec<Value>> {
         let span = Span::current();
-        
+
         // Execute the commands
         let result = self.inner.req_packed_commands(cmd, offset, count);
 
@@ -283,7 +290,10 @@ impl InstrumentedConnection {
 
     /// Convenience method: GET a key with instrumentation
     #[instrument(skip(self, key), fields(db.operation = "GET"))]
-    pub fn get<K: redis::ToRedisArgs, RV: redis::FromRedisValue>(&mut self, key: K) -> RedisResult<RV> {
+    pub fn get<K: redis::ToRedisArgs, RV: redis::FromRedisValue>(
+        &mut self,
+        key: K,
+    ) -> RedisResult<RV> {
         let mut cmd = redis::Cmd::new();
         cmd.arg("GET").arg(key);
         let result = self.req_command(&cmd)?;
@@ -292,7 +302,11 @@ impl InstrumentedConnection {
 
     /// Convenience method: SET a key with instrumentation
     #[instrument(skip(self, key, value), fields(db.operation = "SET"))]
-    pub fn set<K: redis::ToRedisArgs, V: redis::ToRedisArgs>(&mut self, key: K, value: V) -> RedisResult<()> {
+    pub fn set<K: redis::ToRedisArgs, V: redis::ToRedisArgs>(
+        &mut self,
+        key: K,
+        value: V,
+    ) -> RedisResult<()> {
         let mut cmd = redis::Cmd::new();
         cmd.arg("SET").arg(key).arg(value);
         let result = self.req_command(&cmd)?;
@@ -329,9 +343,9 @@ impl InstrumentedConnection {
     /// Convenience method: HGET hash field with instrumentation
     #[instrument(skip(self, key, field), fields(db.operation = "HGET"))]
     pub fn hget<K: redis::ToRedisArgs, F: redis::ToRedisArgs, RV: redis::FromRedisValue>(
-        &mut self, 
-        key: K, 
-        field: F
+        &mut self,
+        key: K,
+        field: F,
     ) -> RedisResult<RV> {
         let mut cmd = redis::Cmd::new();
         cmd.arg("HGET").arg(key).arg(field);
@@ -342,10 +356,10 @@ impl InstrumentedConnection {
     /// Convenience method: HSET hash field with instrumentation
     #[instrument(skip(self, key, field, value), fields(db.operation = "HSET"))]
     pub fn hset<K: redis::ToRedisArgs, F: redis::ToRedisArgs, V: redis::ToRedisArgs>(
-        &mut self, 
-        key: K, 
-        field: F, 
-        value: V
+        &mut self,
+        key: K,
+        field: F,
+        value: V,
     ) -> RedisResult<bool> {
         let mut cmd = redis::Cmd::new();
         cmd.arg("HSET").arg(key).arg(field).arg(value);
@@ -355,7 +369,11 @@ impl InstrumentedConnection {
 
     /// Convenience method: SADD to set with instrumentation
     #[instrument(skip(self, key, members), fields(db.operation = "SADD"))]
-    pub fn sadd<K: redis::ToRedisArgs, M: redis::ToRedisArgs>(&mut self, key: K, members: M) -> RedisResult<i64> {
+    pub fn sadd<K: redis::ToRedisArgs, M: redis::ToRedisArgs>(
+        &mut self,
+        key: K,
+        members: M,
+    ) -> RedisResult<i64> {
         let mut cmd = redis::Cmd::new();
         cmd.arg("SADD").arg(key).arg(members);
         let result = self.req_command(&cmd)?;
@@ -365,9 +383,9 @@ impl InstrumentedConnection {
     /// Convenience method: SISMEMBER check with instrumentation
     #[instrument(skip(self, key, member), fields(db.operation = "SISMEMBER"))]
     pub fn sismember<K: redis::ToRedisArgs, M: redis::ToRedisArgs>(
-        &mut self, 
-        key: K, 
-        member: M
+        &mut self,
+        key: K,
+        member: M,
     ) -> RedisResult<bool> {
         let mut cmd = redis::Cmd::new();
         cmd.arg("SISMEMBER").arg(key).arg(member);
@@ -376,15 +394,15 @@ impl InstrumentedConnection {
     }
 }
 
-/// A type alias for `InstrumentedConnection`, specifically representing a Redis connection 
+/// A type alias for `InstrumentedConnection`, specifically representing a Redis connection
 /// that is instrumented for monitoring or performance tracking purposes.
 ///
-/// This alias simplifies the codebase by providing a more contextually relevant name 
+/// This alias simplifies the codebase by providing a more contextually relevant name
 /// when dealing with Redis connections.
 ///
 /// # Example
-/// ```rust
-/// use your_crate_name::InstrumentedRedisConnection;
+/// ```ignore
+/// use otel_instrumentation_redis::sync::InstrumentedRedisConnection;
 ///
 /// fn use_redis_connection(connection: InstrumentedRedisConnection) {
 ///     // Perform operations with the instrumented Redis connection.

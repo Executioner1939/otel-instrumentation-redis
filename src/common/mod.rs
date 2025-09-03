@@ -26,7 +26,7 @@ use opentelemetry_semantic_conventions as semconv;
 ///
 /// ```rust,ignore
 /// use redis::Cmd;
-/// use your_crate::extract_command_attributes;
+/// use otel_instrumentation_redis::extract_command_attributes;
 ///
 /// let cmd = Cmd::new(); // Create a Redis command (example)
 /// let attributes = extract_command_attributes(&cmd);
@@ -43,13 +43,14 @@ use opentelemetry_semantic_conventions as semconv;
 /// If `get_command_name` returns `None`, the `DB_OPERATION_NAME` attribute will not
 /// be added to the result vector.
 pub fn extract_command_attributes(cmd: &redis::Cmd) -> Vec<KeyValue> {
-    let mut attributes = vec![
-        KeyValue::new(semconv::attribute::DB_SYSTEM_NAME, "redis"),
-    ];
+    let mut attributes = vec![KeyValue::new(semconv::attribute::DB_SYSTEM_NAME, "redis")];
 
     // Try to extract the command name
     if let Some(cmd_name) = get_command_name(cmd) {
-        attributes.push(KeyValue::new(semconv::attribute::DB_OPERATION_NAME, cmd_name));
+        attributes.push(KeyValue::new(
+            semconv::attribute::DB_OPERATION_NAME,
+            cmd_name,
+        ));
     }
 
     attributes
@@ -117,7 +118,7 @@ fn get_command_name(cmd: &redis::Cmd) -> Option<String> {
             redis::Arg::Simple(bytes) => bytes,
             redis::Arg::Cursor => return Some("SCAN".to_string()), // Cursor commands are SCAN family
         };
-        
+
         // Convert bytes to string, handling UTF-8 conversion
         match std::str::from_utf8(arg_bytes) {
             Ok(cmd_name) => Some(cmd_name.to_uppercase()),
@@ -134,14 +135,14 @@ fn get_command_name(cmd: &redis::Cmd) -> Option<String> {
 
 /// Generates a span name for a Redis operation.
 ///
-/// This function takes an operation name as input, converts it to lowercase, 
-/// and formats it into a span name prefixed with "redis". The resulting span 
-/// name is used for tracing or monitoring purposes to identify the specific 
+/// This function takes an operation name as input, converts it to lowercase,
+/// and formats it into a span name prefixed with "redis". The resulting span
+/// name is used for tracing or monitoring purposes to identify the specific
 /// Redis operation being performed.
 ///
 /// # Arguments
 ///
-/// * `operation` - A string slice that holds the Redis operation name. 
+/// * `operation` - A string slice that holds the Redis operation name.
 ///   For example, "GET", "SET", etc.
 ///
 /// # Returns
@@ -184,7 +185,7 @@ pub fn generate_span_name(operation: &str) -> String {
 /// ```rust,ignore
 /// use tracing::info_span;
 /// use redis::Cmd;
-/// use your_crate::create_command_span;
+/// use otel_instrumentation_redis::create_command_span;
 ///
 /// let command = redis::cmd("SET").arg("key").arg("value");
 /// let (span, attributes) = create_command_span(&command);
@@ -208,11 +209,11 @@ pub fn generate_span_name(operation: &str) -> String {
 ///
 pub fn create_command_span(cmd: &redis::Cmd) -> (tracing::Span, Vec<KeyValue>) {
     let attributes = extract_command_attributes(cmd);
-    
+
     // Extract command name for span name
     let operation = get_command_name(cmd).unwrap_or_else(|| "command".to_string());
     let span_name = generate_span_name(&operation);
-    
+
     // Create span with initial attributes
     let span = tracing::info_span!(
         "redis_command",
@@ -220,7 +221,7 @@ pub fn create_command_span(cmd: &redis::Cmd) -> (tracing::Span, Vec<KeyValue>) {
         db.system = "redis",
         db.operation = %operation
     );
-    
+
     (span, attributes)
 }
 
@@ -256,9 +257,10 @@ pub fn create_command_span(cmd: &redis::Cmd) -> (tracing::Span, Vec<KeyValue>) {
 ///
 /// # Example
 ///
-/// ```rust
+/// ```ignore
 /// use tracing::Span;
 /// use opentelemetry::KeyValue;
+/// use otel_instrumentation_redis::common::apply_span_attributes;
 ///
 /// let span = Span::current();
 /// let attributes = vec![
@@ -291,16 +293,16 @@ pub fn apply_span_attributes(span: &tracing::Span, attributes: &[KeyValue]) {
         match &attr.value {
             opentelemetry::Value::String(s) => {
                 span.record(attr.key.as_str(), s.as_str());
-            },
+            }
             opentelemetry::Value::I64(i) => {
                 span.record(attr.key.as_str(), *i);
-            },
+            }
             opentelemetry::Value::F64(f) => {
                 span.record(attr.key.as_str(), *f);
-            },
+            }
             opentelemetry::Value::Bool(b) => {
                 span.record(attr.key.as_str(), *b);
-            },
+            }
             _ => {
                 // Skip other value types that don't map well to tracing fields
             }
@@ -356,7 +358,7 @@ pub fn record_command_result<T>(span: &tracing::Span, result: &Result<T, redis::
     match result {
         Ok(_) => {
             span.record("otel.status_code", "OK");
-        },
+        }
         Err(err) => {
             record_error_on_span(span, err);
         }
@@ -429,52 +431,52 @@ pub fn record_error_on_span(span: &tracing::Span, err: &redis::RedisError) {
     match err.kind() {
         redis::ErrorKind::ResponseError => {
             span.record("error.type", "response_error");
-        },
+        }
         redis::ErrorKind::AuthenticationFailed => {
             span.record("error.type", "authentication_failed");
-        },
+        }
         redis::ErrorKind::TypeError => {
             span.record("error.type", "type_error");
-        },
+        }
         redis::ErrorKind::ExecAbortError => {
             span.record("error.type", "exec_abort_error");
-        },
+        }
         redis::ErrorKind::BusyLoadingError => {
             span.record("error.type", "busy_loading_error");
-        },
+        }
         redis::ErrorKind::NoScriptError => {
             span.record("error.type", "no_script_error");
-        },
+        }
         redis::ErrorKind::InvalidClientConfig => {
             span.record("error.type", "invalid_client_config");
-        },
+        }
         redis::ErrorKind::Moved => {
             span.record("error.type", "moved");
-        },
+        }
         redis::ErrorKind::Ask => {
             span.record("error.type", "ask");
-        },
+        }
         redis::ErrorKind::TryAgain => {
             span.record("error.type", "try_again");
-        },
+        }
         redis::ErrorKind::ClusterDown => {
             span.record("error.type", "cluster_down");
-        },
+        }
         redis::ErrorKind::CrossSlot => {
             span.record("error.type", "cross_slot");
-        },
+        }
         redis::ErrorKind::MasterDown => {
             span.record("error.type", "master_down");
-        },
+        }
         redis::ErrorKind::IoError => {
             span.record("error.type", "io_error");
-        },
+        }
         redis::ErrorKind::ClientError => {
             span.record("error.type", "client_error");
-        },
+        }
         redis::ErrorKind::ExtensionError => {
             span.record("error.type", "extension_error");
-        },
+        }
         _ => {
             span.record("error.type", "unknown");
         }
@@ -507,10 +509,11 @@ pub fn record_error_on_span(span: &tracing::Span, err: &redis::RedisError) {
 ///
 /// # Examples
 ///
-/// ```rust
+/// ```ignore
 /// use tracing::span;
 /// use tracing::Level;
 /// use redis::RedisError;
+/// use otel_instrumentation_redis::common::record_command_result_with_context;
 ///
 /// let span = span!(Level::INFO, "redis_command");
 /// let result: Result<(), RedisError> = Err(RedisError::from((redis::ErrorKind::IoError, "Connection closed")));
@@ -526,13 +529,13 @@ pub fn record_error_on_span(span: &tracing::Span, err: &redis::RedisError) {
 /// - This function depends on the `tracing` crate for recording spans and structured logging.
 /// - It also depends on the `redis` crate for handling `RedisError` structures.
 pub fn record_command_result_with_context<T>(
-    span: &tracing::Span, 
+    span: &tracing::Span,
     result: &Result<T, redis::RedisError>,
     operation: &str,
-    key_info: Option<&str>
+    key_info: Option<&str>,
 ) {
     record_command_result(span, result);
-    
+
     // Add additional context for failed operations
     if result.is_err() {
         span.record("redis.operation_context", operation);

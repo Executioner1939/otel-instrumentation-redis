@@ -1,9 +1,9 @@
 //! Asynchronous Redis connection instrumentation
 
+use crate::common::{apply_span_attributes, create_command_span, record_command_result};
 use redis::aio::{ConnectionLike, MultiplexedConnection};
 use redis::{Cmd, RedisResult, Value};
 use tracing::instrument;
-use crate::common::{create_command_span, apply_span_attributes, record_command_result};
 
 /// An instrumented wrapper around an async Redis connection
 pub struct InstrumentedAsyncConnection<C> {
@@ -13,9 +13,7 @@ pub struct InstrumentedAsyncConnection<C> {
 impl<C: ConnectionLike> InstrumentedAsyncConnection<C> {
     /// Create a new instrumented async connection
     pub fn new(connection: C) -> Self {
-        Self {
-            inner: connection,
-        }
+        Self { inner: connection }
     }
 
     /// Get the underlying connection
@@ -32,7 +30,7 @@ impl<C: ConnectionLike> InstrumentedAsyncConnection<C> {
     pub async fn req_command(&mut self, cmd: &Cmd) -> RedisResult<Value> {
         let (span, attributes) = create_command_span(cmd);
         let _enter = span.enter();
-        
+
         // Apply additional attributes
         apply_span_attributes(&span, &attributes);
 
@@ -46,14 +44,17 @@ impl<C: ConnectionLike> InstrumentedAsyncConnection<C> {
     }
 
     /// Execute a pipeline of commands with tracing
-    pub async fn execute_pipeline(&mut self, pipeline: &redis::Pipeline) -> RedisResult<Vec<Value>> {
+    pub async fn execute_pipeline(
+        &mut self,
+        pipeline: &redis::Pipeline,
+    ) -> RedisResult<Vec<Value>> {
         let span = tracing::info_span!(
             "redis_pipeline",
             db.system = "redis",
             db.operation = "pipeline"
         );
         let _enter = span.enter();
-        
+
         // Execute the pipeline
         let result: RedisResult<Vec<Value>> = pipeline.query_async(&mut self.inner).await;
 
@@ -65,7 +66,10 @@ impl<C: ConnectionLike> InstrumentedAsyncConnection<C> {
 
     /// Convenience method: GET a key with instrumentation
     #[instrument(skip(self, key), fields(db.operation = "GET"))]
-    pub async fn get<K: redis::ToRedisArgs, RV: redis::FromRedisValue>(&mut self, key: K) -> RedisResult<RV> {
+    pub async fn get<K: redis::ToRedisArgs, RV: redis::FromRedisValue>(
+        &mut self,
+        key: K,
+    ) -> RedisResult<RV> {
         let mut cmd = redis::Cmd::new();
         cmd.arg("GET").arg(key);
         let result = self.req_command(&cmd).await?;
@@ -74,7 +78,11 @@ impl<C: ConnectionLike> InstrumentedAsyncConnection<C> {
 
     /// Convenience method: SET a key with instrumentation
     #[instrument(skip(self, key, value), fields(db.operation = "SET"))]
-    pub async fn set<K: redis::ToRedisArgs, V: redis::ToRedisArgs>(&mut self, key: K, value: V) -> RedisResult<()> {
+    pub async fn set<K: redis::ToRedisArgs, V: redis::ToRedisArgs>(
+        &mut self,
+        key: K,
+        value: V,
+    ) -> RedisResult<()> {
         let mut cmd = redis::Cmd::new();
         cmd.arg("SET").arg(key).arg(value);
         let result = self.req_command(&cmd).await?;
@@ -101,7 +109,11 @@ impl<C: ConnectionLike> InstrumentedAsyncConnection<C> {
 
     /// Convenience method: EXPIRE key with instrumentation
     #[instrument(skip(self, key), fields(db.operation = "EXPIRE"))]
-    pub async fn expire<K: redis::ToRedisArgs>(&mut self, key: K, seconds: usize) -> RedisResult<bool> {
+    pub async fn expire<K: redis::ToRedisArgs>(
+        &mut self,
+        key: K,
+        seconds: usize,
+    ) -> RedisResult<bool> {
         let mut cmd = redis::Cmd::new();
         cmd.arg("EXPIRE").arg(key).arg(seconds);
         let result = self.req_command(&cmd).await?;
@@ -111,9 +123,9 @@ impl<C: ConnectionLike> InstrumentedAsyncConnection<C> {
     /// Convenience method: HGET hash field with instrumentation
     #[instrument(skip(self, key, field), fields(db.operation = "HGET"))]
     pub async fn hget<K: redis::ToRedisArgs, F: redis::ToRedisArgs, RV: redis::FromRedisValue>(
-        &mut self, 
-        key: K, 
-        field: F
+        &mut self,
+        key: K,
+        field: F,
     ) -> RedisResult<RV> {
         let mut cmd = redis::Cmd::new();
         cmd.arg("HGET").arg(key).arg(field);
@@ -124,10 +136,10 @@ impl<C: ConnectionLike> InstrumentedAsyncConnection<C> {
     /// Convenience method: HSET hash field with instrumentation
     #[instrument(skip(self, key, field, value), fields(db.operation = "HSET"))]
     pub async fn hset<K: redis::ToRedisArgs, F: redis::ToRedisArgs, V: redis::ToRedisArgs>(
-        &mut self, 
-        key: K, 
-        field: F, 
-        value: V
+        &mut self,
+        key: K,
+        field: F,
+        value: V,
     ) -> RedisResult<bool> {
         let mut cmd = redis::Cmd::new();
         cmd.arg("HSET").arg(key).arg(field).arg(value);
@@ -137,7 +149,11 @@ impl<C: ConnectionLike> InstrumentedAsyncConnection<C> {
 
     /// Convenience method: SADD to set with instrumentation
     #[instrument(skip(self, key, members), fields(db.operation = "SADD"))]
-    pub async fn sadd<K: redis::ToRedisArgs, M: redis::ToRedisArgs>(&mut self, key: K, members: M) -> RedisResult<i64> {
+    pub async fn sadd<K: redis::ToRedisArgs, M: redis::ToRedisArgs>(
+        &mut self,
+        key: K,
+        members: M,
+    ) -> RedisResult<i64> {
         let mut cmd = redis::Cmd::new();
         cmd.arg("SADD").arg(key).arg(members);
         let result = self.req_command(&cmd).await?;
@@ -147,9 +163,9 @@ impl<C: ConnectionLike> InstrumentedAsyncConnection<C> {
     /// Convenience method: SISMEMBER check with instrumentation
     #[instrument(skip(self, key, member), fields(db.operation = "SISMEMBER"))]
     pub async fn sismember<K: redis::ToRedisArgs, M: redis::ToRedisArgs>(
-        &mut self, 
-        key: K, 
-        member: M
+        &mut self,
+        key: K,
+        member: M,
     ) -> RedisResult<bool> {
         let mut cmd = redis::Cmd::new();
         cmd.arg("SISMEMBER").arg(key).arg(member);
@@ -167,9 +183,7 @@ pub struct InstrumentedMultiplexedConnection {
 impl InstrumentedMultiplexedConnection {
     /// Create a new instrumented multiplexed connection
     pub fn new(connection: MultiplexedConnection) -> Self {
-        Self {
-            inner: connection,
-        }
+        Self { inner: connection }
     }
 
     /// Get the underlying connection
@@ -181,7 +195,7 @@ impl InstrumentedMultiplexedConnection {
     pub async fn req_command(&mut self, cmd: &Cmd) -> RedisResult<Value> {
         let (span, attributes) = create_command_span(cmd);
         let _enter = span.enter();
-        
+
         // Apply additional attributes
         apply_span_attributes(&span, &attributes);
 
@@ -195,14 +209,17 @@ impl InstrumentedMultiplexedConnection {
     }
 
     /// Execute a pipeline of commands with tracing
-    pub async fn execute_pipeline(&mut self, pipeline: &redis::Pipeline) -> RedisResult<Vec<Value>> {
+    pub async fn execute_pipeline(
+        &mut self,
+        pipeline: &redis::Pipeline,
+    ) -> RedisResult<Vec<Value>> {
         let span = tracing::info_span!(
             "redis_pipeline",
             db.system = "redis",
             db.operation = "pipeline"
         );
         let _enter = span.enter();
-        
+
         // Execute the pipeline
         let result: RedisResult<Vec<Value>> = pipeline.query_async(&mut self.inner).await;
 
@@ -214,7 +231,10 @@ impl InstrumentedMultiplexedConnection {
 
     /// Convenience method: GET a key with instrumentation
     #[instrument(skip(self, key), fields(db.operation = "GET"))]
-    pub async fn get<K: redis::ToRedisArgs, RV: redis::FromRedisValue>(&mut self, key: K) -> RedisResult<RV> {
+    pub async fn get<K: redis::ToRedisArgs, RV: redis::FromRedisValue>(
+        &mut self,
+        key: K,
+    ) -> RedisResult<RV> {
         let mut cmd = redis::Cmd::new();
         cmd.arg("GET").arg(key);
         let result = self.req_command(&cmd).await?;
@@ -223,7 +243,11 @@ impl InstrumentedMultiplexedConnection {
 
     /// Convenience method: SET a key with instrumentation
     #[instrument(skip(self, key, value), fields(db.operation = "SET"))]
-    pub async fn set<K: redis::ToRedisArgs, V: redis::ToRedisArgs>(&mut self, key: K, value: V) -> RedisResult<()> {
+    pub async fn set<K: redis::ToRedisArgs, V: redis::ToRedisArgs>(
+        &mut self,
+        key: K,
+        value: V,
+    ) -> RedisResult<()> {
         let mut cmd = redis::Cmd::new();
         cmd.arg("SET").arg(key).arg(value);
         let result = self.req_command(&cmd).await?;
@@ -250,7 +274,11 @@ impl InstrumentedMultiplexedConnection {
 
     /// Convenience method: EXPIRE key with instrumentation
     #[instrument(skip(self, key), fields(db.operation = "EXPIRE"))]
-    pub async fn expire<K: redis::ToRedisArgs>(&mut self, key: K, seconds: usize) -> RedisResult<bool> {
+    pub async fn expire<K: redis::ToRedisArgs>(
+        &mut self,
+        key: K,
+        seconds: usize,
+    ) -> RedisResult<bool> {
         let mut cmd = redis::Cmd::new();
         cmd.arg("EXPIRE").arg(key).arg(seconds);
         let result = self.req_command(&cmd).await?;
@@ -260,9 +288,9 @@ impl InstrumentedMultiplexedConnection {
     /// Convenience method: HGET hash field with instrumentation
     #[instrument(skip(self, key, field), fields(db.operation = "HGET"))]
     pub async fn hget<K: redis::ToRedisArgs, F: redis::ToRedisArgs, RV: redis::FromRedisValue>(
-        &mut self, 
-        key: K, 
-        field: F
+        &mut self,
+        key: K,
+        field: F,
     ) -> RedisResult<RV> {
         let mut cmd = redis::Cmd::new();
         cmd.arg("HGET").arg(key).arg(field);
@@ -273,10 +301,10 @@ impl InstrumentedMultiplexedConnection {
     /// Convenience method: HSET hash field with instrumentation
     #[instrument(skip(self, key, field, value), fields(db.operation = "HSET"))]
     pub async fn hset<K: redis::ToRedisArgs, F: redis::ToRedisArgs, V: redis::ToRedisArgs>(
-        &mut self, 
-        key: K, 
-        field: F, 
-        value: V
+        &mut self,
+        key: K,
+        field: F,
+        value: V,
     ) -> RedisResult<bool> {
         let mut cmd = redis::Cmd::new();
         cmd.arg("HSET").arg(key).arg(field).arg(value);
@@ -286,7 +314,11 @@ impl InstrumentedMultiplexedConnection {
 
     /// Convenience method: SADD to set with instrumentation
     #[instrument(skip(self, key, members), fields(db.operation = "SADD"))]
-    pub async fn sadd<K: redis::ToRedisArgs, M: redis::ToRedisArgs>(&mut self, key: K, members: M) -> RedisResult<i64> {
+    pub async fn sadd<K: redis::ToRedisArgs, M: redis::ToRedisArgs>(
+        &mut self,
+        key: K,
+        members: M,
+    ) -> RedisResult<i64> {
         let mut cmd = redis::Cmd::new();
         cmd.arg("SADD").arg(key).arg(members);
         let result = self.req_command(&cmd).await?;
@@ -296,9 +328,9 @@ impl InstrumentedMultiplexedConnection {
     /// Convenience method: SISMEMBER check with instrumentation
     #[instrument(skip(self, key, member), fields(db.operation = "SISMEMBER"))]
     pub async fn sismember<K: redis::ToRedisArgs, M: redis::ToRedisArgs>(
-        &mut self, 
-        key: K, 
-        member: M
+        &mut self,
+        key: K,
+        member: M,
     ) -> RedisResult<bool> {
         let mut cmd = redis::Cmd::new();
         cmd.arg("SISMEMBER").arg(key).arg(member);

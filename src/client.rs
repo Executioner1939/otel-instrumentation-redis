@@ -20,8 +20,8 @@ use tracing::instrument;
 ///
 /// # Example
 /// ```rust,ignore
-/// use your_crate::InstrumentedClient;
-/// use your_crate::Client;
+/// use otel_instrumentation_redis::InstrumentedClient;
+/// use otel_instrumentation_redis::Client;
 ///
 /// let client = Client::new();
 /// let instrumented_client = InstrumentedClient { inner: client };
@@ -53,11 +53,8 @@ impl InstrumentedClient {
     /// ```
     #[instrument(skip(client))]
     pub fn new(client: Client) -> Self {
-        Self {
-            inner: client,
-        }
+        Self { inner: client }
     }
-
 
     /// Returns a reference to the inner `Client` instance.
     ///
@@ -75,7 +72,6 @@ impl InstrumentedClient {
     pub fn inner(&self) -> &Client {
         &self.inner
     }
-
 
     /// Retrieves a synchronous instrumented Redis connection.
     ///
@@ -115,7 +111,7 @@ impl InstrumentedClient {
     ///
     /// ```toml,ignore
     /// [dependencies]
-    /// your_crate = { version = "1.0", features = ["sync"] }
+    /// otel_instrumentation_redis = { version = "1.0", features = ["sync"] }
     /// ```
     #[cfg(feature = "sync")]
     #[instrument(skip(self))]
@@ -127,9 +123,10 @@ impl InstrumentedClient {
     /// Get a multiplexed asynchronous connection to the Redis server
     #[cfg(feature = "aio")]
     #[instrument(skip(self))]
-    pub async fn get_multiplexed_async_connection(&self) -> Result<crate::aio::InstrumentedMultiplexedConnection, RedisError> {
+    pub async fn get_multiplexed_async_connection(
+        &self,
+    ) -> Result<crate::aio::InstrumentedMultiplexedConnection, RedisError> {
         let conn = self.inner.get_multiplexed_async_connection().await?;
         Ok(crate::aio::InstrumentedMultiplexedConnection::new(conn))
     }
-
 }
