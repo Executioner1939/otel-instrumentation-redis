@@ -3,7 +3,7 @@
 [![crates.io](https://img.shields.io/crates/v/otel-instrumentation-redis.svg)](https://crates.io/crates/otel-instrumentation-redis)
 [![Documentation](https://docs.rs/otel-instrumentation-redis/badge.svg)](https://docs.rs/otel-instrumentation-redis)
 [![License](https://img.shields.io/crates/l/otel-instrumentation-redis)](LICENSE)
-[![Build Status](https://img.shields.io/github/actions/workflow/status/hermes-capital-io/hermes-platform/ci.yml?branch=main)](https://github.com/hermes-capital-io/hermes-platform/actions)
+[![Build Status](https://img.shields.io/github/actions/workflow/status/Executioner1939/otel-instrumentation-redis/ci.yml?branch=main)](Executioner1939/otel-instrumentation-redis/actions)
 [![Minimum Supported Rust Version](https://img.shields.io/badge/MSRV-1.70-blue.svg)](https://blog.rust-lang.org/2023/06/01/Rust-1.70.0.html)
 
 Production-ready OpenTelemetry instrumentation for the `redis-rs` crate, providing distributed tracing and observability for Redis operations with minimal performance overhead.
